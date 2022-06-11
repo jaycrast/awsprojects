@@ -31,10 +31,6 @@ Ideal Outcomes:
 
 
 IAM:
-
-Production IAM Sign-in: https://jc-aws-production.signin.aws.amazon.com/console
-General IAM Sign-in: https://jc-aws-gen.signin.aws.amazon.com/console
-
 - Every AWS account comes with its own running copy/database of IAM. 
 	- IAM is a globally resilient server so any data is always secure across all AWS regions
 	- What you see in IAM is specific to your account. IAM has full trust between itself and the AWS Account
@@ -493,4 +489,57 @@ Shared Responsibility model
     - platform, application, operating system, network and firewall config
     - customer data
 
+HA vs FT vs DR
+- HA aims to ensure an agreed level of operational performance, usually uptime for a higher than normal period
+    - System availability is expressed in the form of percentage of time. 99.9% (three 9's, 8.77 hours of down time per year)
+        - Some systems need even more (five 9's, 5.16 minutes per year down time)
+- Key factor for HA, if a server fails and traffic is passed to the standby server, the user may have to relogin or experience a small amount of dissruption
+- HA has cost to it, and needs to be engineered ahead of time
 
+- Fault Tolerance is similar to HA, but allows a system to continue operating properly in the event of a falure
+    - such as having redundant power supplies, if 1 power supply fails, the system is still operational with the 2nd power supply
+    - FT operates with ZERO disruption, unlike HA
+    - if an application connects to 2 servers, if one server fails, the application still runs off the 2nd server
+
+- Disaster Recovery is a set of policies, tools and procedures to enable the recovery of continuation of vital tech following a disaster
+    - if HA and FT doesn't work, DR is what follows 
+    - you first have pre-planning of disaster recovery processes, then create the actual DR process such as having a backup datacenter ready to be deployed
+    - good DR planning includes having off-site backups 
+
+DNS 101
+- DNS client: your laptop, phone, PC, etc
+- Resolver: software on device, or a server which queries DNS on your behalf
+- Zone: part of the DNS database (amazon.com)
+- Zonefile: physical databse for a zone
+- Nameserver: where the zonefiles are hosted
+DNS Root
+- www.amazon.com. period after .com is the DNS root
+	- DNS root also known as root zone which is a database hosted on 13 DNS Root servers, operated by 12 large global companies
+	- these companies managed the root servers only, not the root zone
+	- the root servers are the entry point
+- system will use a DNS resolver, which uses root hints file to point to the DNS root servers
+- root zone is managed by IANA (internet assigned numbers authority)
+	- root servers host the root zones
+- root zone is authoritative, or trusted
+	- top level domains are trusted in the root zone (.com, .org, .uk)
+
+Laptop queries www.amazon.com > reach root zone (.com, .org etc) > root zone name server passes you to .com zone > .com zone passes you to amazon.com nameserver
+
+Route53
+- Register domains
+- Host Zones, which are managed nameservers
+- Route53 is a global service, single databse, so it's globally resilient
+- Route53 provides hosted zones, DNS as a Service
+- Zone files in AWS are hosted zones on four managed name servers
+	- they can be public on the public internet (AWS Public Zone)
+	- they can also be private linked to VPC's, and only accessible from within those VPC's
+	- hosted zone hosts recordsets
+
+CloudTrail:
+!!!EXAM!!!
+- CloudTrail enabled by default for 90 days, no s3
+- CloudTrail trails are how you configure S3 and CloudWatch Logs
+- management events only by default, not data events
+- certain elements carry a cost, especially if you use this in prod
+- IAM, STS, CloudFront are global service events, which need to be configured and are logged under US-East-1
+- NOT REALTIME LOGGING, there is a delay
