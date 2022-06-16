@@ -1,0 +1,189 @@
+- EC2 Key Facts 
+    - IAAS - provides virtual machines, unit of consumption is the instances
+    - private service by default, uses VPC Networking
+    - EC2 is AZ resilient. Instance fails if AZ fails
+    - Different instance sizes and capabilities
+    - on-demand billing per second or per hour, charged for the instance, as well as the storage the instance uses
+    - local on-host storage or elastic block storage
+
+- Virtualization 101
+    - Traditional server is the hardware (cpu/mem, network, devices), and the OS sits on top of that
+        - The kernel is the only part of the software that runs in privileged mode
+        - Applications run in user mode, if the application needs access to the hardware they make a system call to the kernel
+    - Emulated Virtualization
+        - You have a traditional server, with the operating system installed along with the hypervisor
+        - The guests on the host think they are actual servers with real resources, but they are allocated to the guest by the host hypervisor
+        - If a guest needs access to the hardware, the guest makes a call to the hardware, and hypervisor translates it in software using binary translation
+            - binary translation is extremely slow, about half as fast as the operation would normally be
+    - Para-Virtualization
+        - Works like emulated virtulization, but the guests use modified Linux OS
+        - Instead of the guest making a call to the hardware, it makes a call to the hypervisor instead called HYPERCALLS
+    - Hardware Assited Virtualization
+        - The hardware became virtualization aware
+        - The guest make a call to the hardware, and the hardware then talks directly to the hypervisor without needing binary translation
+        - Software still gets in the way when using the hosts network card
+    - Single Root IO Virtualization (SR-IOV) is a network card that's virtualization aware
+        - Splits a network card in to many logical NICs
+    - In EC2, this is Enhanced Networking
+        - high consistent IO, network performance massively improved
+        - consistent lower latency even at higher loads
+        - less CPU usage
+        - Nitro is the AWS hypervisor stack
+
+- EC2 Architecture
+    - EC2 hosts are either shared or dedicated
+        - Shared hosts are still completely isolated
+        - Dedicated hosts, you pay for the entire EC2 host hardware, you don't pay for the EC2 Instance
+        - EC2 hosts are the local hardware, plus local storage called Instance Store
+            - Instance Store is temporary, and is lost if the instance moves off this host and in to another host
+        - The host has the storage network and the data network
+        - Instance connects to the data network
+            - EC2 can also connect to remote storage called EBS, EBS lets you allocate Volumes to the instances in the same AZ
+    - EC2 is used for traditional OS + application computing
+        - Good for persistant long-running computing
+        - Server style applications that expect to be running on an OS, waiting for incoming connections
+        - Good for burst or state-state loads
+        - Monolithic application stacks (database, runtime based components, and if it needs to be running on an OS)
+        - Used for DR, if you have a traditional virtual machine environment, EC2 would be used for a cloud disaster recovery
+
+- EC2 Instance Types
+    - Raw CPU, Mem, Local Storage, and type
+    - Resource Ratios
+    - Storage and Data Network Bandwidth
+    - System Architectur and Vendor
+        - intel, AMD, etc
+    - Additional features such as GPU's, FPGAs (special type of cpu where you can program the hardware)
+    - 5 Main Categories
+        - General Purpose (default), steady state workloads, equal resource ratio between mem/cpu etc
+        - Compute Optimized, media processing, HPC, scientific modelling, gaming, machine learning. more cpu then memory
+        - Memory Optimized, processing large memory datasets, database workloads, opposite of compute optimized
+        - Accelerated Computing, hardware GPU and FPGAs
+        - Storage Optimized, large ammount of super fast local storage, elasticsearch, large IO work with databases
+
+    - R5dn.8xlarge
+        - Entire name is the instance type
+        - R is the instance family
+        - Number 5 is the instance generation, 5th generation of the R family
+        - dn are letters for extra capabilities(d = nvme storage, n = network optimized, a = amd CPU, etc.)
+        - 8xlarge is the instance size, determines how much memory/cpu the isntance is allocated
+
+- EC2 Network and DNS
+    - 1 elastic IP per private IPv4 address
+    - security groups are attached to the ENI (network interface), not the instance
+    - secondary ENI has the same abilities as the primary
+    - elastic IP is a static public IP
+
+    EXAM!!!!
+        - ENI's have a MAC address, and a lot of legacy apps use MAC for licensing, this means you can migrate a secondary ENI to to a new instance and licensing follows
+        - you can have 2 ENI's on an instance in different subnets, one for management and another for data etc
+        - different security groups, since SGs are applied to the ENI
+        - OS does NOT see the public IP. This is handled by the NAT device
+        - public IPs are dynamic, if you start/stop an instance or a force migration the public IP is released
+            - to avoid this you need to use an elastic IP
+        - public DNS resolves to the private IP in the VPC, public IP everywhere else
+
+- EC2 Purchase Options (Launch Types)
+    - On-Demand Instances
+        - instances are only charged while running, still charged for storage 
+        - instances are isolated but are on shared hardware
+        - no interruption
+        - default option, billed per second or per hour price
+    - Spot Instances
+        - spot pricing is aws selling unusesd EC2 host capacity for up to 90% discount
+        - customer offers a price they will go up to, and are sold spots at the current price
+            - if the spot price rises above their offer price, the instances are terminated
+        - good for any non time critical systems that can just be rerun if they are terminated
+        - dont use spot for anything that relies consistant reliable compute
+    - Reserved Instances
+        - used for long term consistant use
+        - reduced or no per second/hour price
+        - any unused reservation is still billed
+        - no upfront free, pay per second fee, small discount
+        - pay all upfront for 1 or 3 year term, biggest discount
+        - partial upfront is a mix of the two
+    - Scheduled Reserved Instances
+        - ideal for long term usage, which doesn't run constantly
+        - it's a commitment where you specify the time of it's daily use, and you can only use the instance during that time
+        - doesn't support all instance types and regions, 1200 hours per year, 1 year minimum
+    - Capacity Reservation Instances
+        - When you have a requirement for compute and you can't handle interruptions 
+        - AZ Capacity Reservation, Regional Capacity Reservation, On-Demand capacity reservation
+    - EC2 Savings Plan
+        - Hourly commitment for a 1 or 3 year term
+        - reservation of general compute $ amounts ($20 per hour for 3 years)
+        - any billing beyond the commited saving plan amount is billed at the on-demand rate
+        - also applies to compute products like EC2, Fargate, Lambda
+    - Dedicated Hosts
+        - pay directly for your own physical host (server, cpu, network, mem etc)
+        - pay for host, no instance charges
+        - may have to use this for certain licensing that is based on sockets/cores of physical host
+    - Dedicated Instances
+        - you dont own or share the host, but there are extra charges for the instance
+
+- Vertical Scaling
+    - increase in resource allocation
+    - resizes an EC2 instance, each resize requires a reboot which means distruption
+    - larger instances often carry a cost premium
+    - cap on performance is the maximum instance size
+    - the bennefit is its really simple, and requires no application modification
+
+- Horizontal Scaling
+    - instead of increasing size of instance, it just adds additional instances
+    - requires zero downtime since you aren't changing the existing EC2 instance
+    - requires a load balancer which sits between instances and customers
+        - when customers access the system, it goes through the LB which passes the traffic throughout the instances
+    - Sessions store your login, or your shopping cart on amazon. If you were to swap instances, you would lose your session
+        - to avoid this, you would need application support or off-host sessions
+        - need stateless servers, application doesn't care which instance you connect to because your session is stored in the application, not the instance
+    - no real limits to scaling
+    - often less expensive since you have no large instance premium
+    - more granular
+
+- Instance Metadata
+    - EC2 Service provides data to instances
+    - accessible inside ALL instances
+    - http://169.254.169.254/latest/meta-data/
+        - Environment
+        - Networking
+        - Authentication
+        - User-Data
+    - Metadata is NOT AUTHENTICATED or ENCRYPTED
+        - if someone has access to the instance, they have access to the metadata
+
+- Containers
+    - Containers can be hosted on EC2 instances. You would manage the EC2 instance, which is the container host, as well as the running container
+
+    - ECS (Elastic Container Service)
+        - AWS manages the container host, and you manage the running containers
+        - Container Definition defines the image and the ports for the container (pointer for where the container is located)
+        - Task Definition includes the task role, container/s, and resources. Task can have may containers defined within it. Task is the application as a whole.
+            - task role is an IAM Role which the task assumes, so the container can access other aws services
+        - Service Definition defines how many copies, HA, restarts etc. Used for scaling
+
+    - ECS EC2 Mode
+        - Cluster Container, you manage the EC2 instances that your containers run in. More overhead
+        - if price con
+    - ECS Fargate Mode
+        - AWS manages the EC2 instances that your containers are deployed to, no management overhead
+        - small/burst workloads, use fargate
+
+- EC2 Bootstrapping
+    - Bootstrapping allows build automation
+    - user data accessed via the meta-data IP 169.254.169.254/instance/user-data
+    - anything in user data is executed by instance OS
+    - works ONLY at launch
+    - customers that take a lot of time (long software downloads), use AMI baking and then use bootstrapping to automate the quicker configurations
+
+- CloudFormation Init
+    - cfn-init is a helper script installed on EC2 OS
+    - simple config management system
+    - procedural (user data) vs desired state (cfn-init)
+    - can make sure packages installed, make groups/users, sources, files commands and services
+    - AWS::CloudFormation::Init
+
+- CreationPolicy and Signals
+    - ResourceSignal is placed in a CreationPolicy
+    - cfn-signal command is inside the UserData booststrap script
+    - the signal checks the status of the cfn-init, and will send a signal to the CF stack if the state is okay or has failed
+    - without signals, once the EC2 instance is created, the cloudformation stack will be marked as completed whether the EC2 was actually configured successfully or not
+    
