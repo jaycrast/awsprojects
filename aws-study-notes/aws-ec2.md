@@ -187,3 +187,76 @@
     - the signal checks the status of the cfn-init, and will send a signal to the CF stack if the state is okay or has failed
     - without signals, once the EC2 instance is created, the cloudformation stack will be marked as completed whether the EC2 was actually configured successfully or not
     
+- EC2 Instance Roles 
+    - IAM Role that alloaws EC2 service to assume it
+        - InstanceProfile is attached to an EC2 instance, which create the EC2 instance role
+        - InstanceProfile uses the instance meta-data to deliver the temp credentials to the InstanceProfile
+        - iam/security-credentials/role-name
+        - automatically rotated and are ALWAYS valid
+        - Roles should always be used rather than adding access keys into the instance
+        - CLI tools will use role credentials automatically
+
+- SSM Parameter Store
+    - Storage for configuration and secrets
+        - String, StringList and SecureString
+            - License codes, database strings, full configs and passwords
+        - Hierarchies and versioning
+        - plaintext and ciphertext (integrates with KMS so you can encrypt sensitive data)
+        - public paramters, latest AMIs per region etc
+
+ - CloudWatch is for metrics, CloudWatch Logs is for logging
+    - Neither of these natively capture data inside an instance
+    - CloudWatch Agent is required inside the EC2 instance
+        - required configuration + permissions
+
+- EC2 Placement Groups
+    - Cluster (pack instances close together)   
+        - use when you want to achieve the highest level of performance
+            - launch all the instances at the same time
+            - all instances are in the same rack, and sometimes the same host as well
+            - all instances have direct connections to eachother, 10GB/ps per stream as opposed to 5GB/ps normally
+            - lowest latency and max packets per second possible in AWS
+            - use enhanced networking in instances to achieve the above
+            - no resilience since they're all in the same AZ, and usually on the same hardware
+            - requires a supported instance type, and you should use the same type of instance
+    - Spread (keep instances separated)
+        - provide the maximum amount of HA and resiliency
+            - each instance has it's own isolate networking/rack
+            - limit of 7 instances per AZ
+            - not supported for dedicated instances or hosts
+            - use this for small number of critical instances that require resilience 
+    - Partition (groups of instances spread apart)
+        - designed for when you have more than 7 instances, but you still need to spread them
+            - instead of 7 instance max per AZ, you are limited to 7 PARTITIONS per AZ, with infinite amount of instances per partition
+            - each partition is isolated
+            - used for huge scale parallel systems, you control which systems are grouped in which partitions
+            - great for topolgy aware applications (HDFS, HBase and Cassandra)
+            - contain the impact of failure to part of an application
+
+- EC2 Dedicated Hosts
+    - host dedicate to only you
+        - specify instance type
+    - no instance charges, you pay for the host entirely 
+    - on-demand and reserved options available (same payment options as instances)
+    - host hardware has physical sockets and cores, good for licensing that's billed on hardware
+    - Limitations 
+        - AMI Limits (RHEL, SUSE, Windows AMIs not supported)
+        - Amazon RDS instances not supported
+        - Placement groups not supported
+
+- Enhanced Networking 
+    - Required for highend performance features like Placement Groups
+    - Uses SR-IOV (NIC is virtualization aware)
+        - the hosts NIC is virtually aware, so it has multiple logical cards per physical card
+        - higher I/O and lower host CPU usage, since the host has lower involvement with the networking of the instances
+        - more bandwidth, cosistant lower latency
+        - great for applications that rely on networking performance, higher PPS (packets per second)
+    - usually enabled by default or offered at no extra charge for most instance types
+
+- EBS Optimized
+    - option set on a per instance basis, either on or off
+    - EBS Optimized means dedicated capacity for EBS
+        - faster speeds, storage side doesn't impact performance
+    - most instances support it and have it enabled by default at no extra charge
+    - on older instances its supported but enabling costs extra
+    
