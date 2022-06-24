@@ -59,3 +59,23 @@
     - CANT be assigned to AWS resouces, only subnets
     - Used together with Security Groups to add explicit DENY
     - Each subnet can have one NACL, but many subnets can use the same NACL
+
+- Security Groups
+    - SGs are stateful
+        - they detect response traffic automatically
+    - Allowed in or out request = allowed response
+    - There is NO explicit deny, so you'd have to use a NACL to explicity deny a single bad actor
+    - They operate above NACL on the OSI layer
+        - they support IP/CIDR/ports, but also logical resources
+            - this includes other security groups and itself
+    - Attached to Elastic Network Interfaces (ENI's), they are not attached to instances or subnets
+
+- Network Address Translation (NAT)
+    - set of processes that can remap the source or destination IP
+    - IP masquerading is how you can assign one public IP to many private IP's, only works for outgoing internet access
+    - you can use an EC2 instance configured as a NAT device, or you can now use the NAT Gateway Service in VPC
+    - Elastic IPs (static IPs) are used for NAT Gateways
+    - NATGW's are AZ resilient
+        - need to deploy 1x NATGW and 1x route table in each AZ
+    - Scaled to 45GBps, $ duration and data volume
+    - you can deploy more gateways to increase your bandwidth 

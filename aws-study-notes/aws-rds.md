@@ -1,0 +1,235 @@
+- Relational Database Service (RDS)
+    - SQL is a relational database model
+        - uses SQL (structured query language)
+        - structure in and between tables of data, rigid schema
+        - relationships between tables are defined beforehand
+    - NoSQL (anything that ISNT a relational database or SQL)
+        - Generally a much more relaxed schema
+        - relationships between tables are handled differently
+    - Relationships data example
+        - primary key is a unique ID for every row in the table
+            - every attribute has to have a value (attribute Name will have the name in the row of the table)
+            - Composite key is used to link the primary keys between more than one table
+            - tables schemas and relationships are defined in advance
+            - good for fixed data, and data that's related
+
+    - NoSQL databases 
+        - Key:Value Database
+            - no real schema, no structure, no tables ore relationships
+            - as long as key's are unique, the value doesn't matter
+            - key value databases are extremely fast and scalable, simple
+        - Wide Column Store (DynamoDB)
+            - Uses 1 key called a partition key, and optional other keys
+            - The partiontion key and other keys are grouped in a table, and only have to be unique within that table
+            - any value could have multiple attributes, all attributes, or none
+        - Document Database
+            - uses a structure like JSON or HTML
+            - documents have a unique ID, and the contents are associated with that ID
+            - good for nested data structure, like user profiles, contact information etc
+        - Column (Row Based Database, Redshift)
+            - instead of a row store like MySQL where querrying in attribute requires you to prase through every single row, column stores are stored in columns based off the attribute as opposed to rows
+            - this is ideal for reporting when you want to see every item with a specific attribute, such as sizes or color of an item sold
+                - not ideal for keeping track of orders where the entire row is 
+                - Normally you would have a MySQL database for something like web orders, then use Online Transaction Processing (OLTP) which can be imported in to a column store like Redshift which would then be used for reporting and analytics
+        - Graph Database
+            - relationships between things are formally defined and stored within the database
+            - great for relationship driven, like social media or HR systems
+            - nodes are objects, which have properties like key:value pairs
+            - there are relationships between nodes which are etches
+                - Person would be the node, name/dob etc would be the properties, etches would be the relationship between person node and another node, such as company or department.
+            - relationships are dynamic and fluid, and much more efficient when relationships are constantly changing in a database
+            
+- ACID vs BASE transaction models 
+    - CAP Theorem states DB's have 3 different transaction options. Consistency, availability, and partition tolerance. Choose TWO only.
+        - ACID = Consistency
+        - BASE = Availability
+    - ACID = Transactions are Atomic, Consistent, Isolate, and Durable
+        - RDS is ACID, and has limited scaling
+        - Atomic means all or no components of a transaction either succeed or the entire transaction fails
+            - example is a bank, if you are adding or subtracting from a bank account, you can't have partial transactions
+        - Consistent means transactions move the database from one valid state to another, nothing inbetween
+        - Isolated means if multiple transactions occur at once, they don't interfere with eachother
+        - Durable means once commited, transactions are durable regardless of system failure, power outage, or other issues
+    - BASE = Basically Available, Soft State, Eventually Consistent
+        - Basically Avail. means Read/Write operations are available as much as possible but without any guarantee it's the latest write
+            - The data is replicated across all of the nodes in the DB
+        - Soft State means the DB doesn't enforce consistency, this is offloaded to the application or the user managing the DB
+        - Eventually Consistent means the database will eventually be consistent if you wait long enough
+        - These transactions make DB's highly scalable 
+    - BASE, NoSQL Database
+    - ACID, RDS
+    - Dynamo DB + No SQL = DynamoDB Transactions 
+
+- Databased on EC2
+    - usually bad practice 
+    - Why you should run a DB on EC2:
+        - you would do this if you need direct access to the DB instance OS
+            - EC2 is the only way to do this
+        - EC2 provides advanced DB option tuning (DBROOT)
+        - vendor demands (AWS managed DB's can usually provide DBROOT access still)
+        - best use case is when you have a DB or DB version that AWS does not provide
+        - specific OS/DB combination AWS doesn't provide
+        - decision makers "just want it"
+    - Why you shouldn't run a DB on EC2:
+        - Admin overhead, managing both the instance and the DB
+        - backup/DR management, adds a lot of additional complexity 
+        - EC2 is single AZ
+        - you also lose the features you get from AWS DB products
+        - EC2 is on or off, no serverless and no easy scaling
+        - Replications, takes skills, setup time, monitoring and effectiveness to achieve this
+        - Performance, AWS invest time into optimisation and features
+
+- RDS is a database server as a service
+    - managed database instance, which can house 1 or more databases
+    - multiple engines, MySQL, MariaDB, PostgreSQL, Oracle, MSSQL
+    - Database CNAME is the hostname given to the RDS Instance
+        - use this cname to access the user created databases on the RDS instance
+    - RDS Instances come in various sizes/types, similar to EC2 instances
+    - db.xx is the naming convention, tells the type and size of the instance
+    - active/passive style failover when configured for multiple AZ availability
+    - when you povision an instance, EBS storage is configured as well like EC2
+        - the instance and storage are in the same AZ, AZ level resilience
+        - storage is io1, gp2, or magnetic
+    - billed for the instance, and the storage allocated GB/month
+    - access to RDS is controlled by a security group associated to the RDS Instance
+
+- RDS MultiAZ
+    - secondary hardware is allocated in another AZ
+        - referred to as standy replica isntance
+        - has it's own storage in the AZ it's located in
+        - synch replication to the standby AZ
+        - can't directly access the standby RDS instance
+    - database writes happen and are targeted at the primary RDS instance via CNAME, primary then replicates to the standby
+        - very little lag between the primary and standby, synch happens when the write happens to primary
+        - high availability, not fault tolerant. some impact will occur doing a failover
+
+    - EXAM
+        - No Free-tier, extra cost for standby replica
+        - standby can't be directly used, not used for scalability and gives no performance bennefits
+        - failover takes between 60-120 seconds, HA not FT
+        - backups taken from standby, removed performance impact from primary 
+        - AZ outage, primary will failover to standby. You can also do a manual failover
+        
+- RDS Backups and Restores
+    - RTO (Recovery Time Objective)
+        - time between the DR event and full recovery
+        - lower RTO costs more
+        - 
+    - RPO (Recovery Point Objective)
+        - time between the last backup and the incident
+        - represents the maximum amount of data loss
+        - the lower the RPO value, the more expensive
+    - RDS provides automatic backups and manual snapshots, these go to aws managed S3 buckets
+    - first snapshot is full, and future snapshots are incremental
+    - multiAZ will use the standby for snapshots/backups
+    - snapshots are done on the entire instance, not a single database inside the instance
+
+    - EXAM
+        - When you perform an RDS restore, it creates a NEW RDS instance, which has a new endpoint address
+            - you would have to change your applications to point to the new address
+        - Snapshots = single point in time, from creation time
+        - Automated backups = any 5 minute point in time because of transaction logs
+        - backup is restored and transaction logs are replayed to bring DB to desired point in time
+        - restore aren't fast, think about RTO
+
+- Read Replica
+    - Read only DB Replicas are used for multi regional architecture
+    - this is asynchronous replication, writes are written to the primary instance first, once it's on disk it'll read replica to the other instances
+    - thse DB instances can provide additional read performance, unlike synchronous replications
+    - read replicas can have other read replicas but lag starts to be a problem
+    - read replicas can provide global performance improvements
+    - read replicas offer near 0 RPO
+    - they can be promoted quickly, low RTO
+    - read replicas can replicate data corruption
+    - these instances are real only until promoted
+
+- RDS Security
+    - SSL/TLS in transit encryption is available for RDS
+    - RDS supports EBS volume encryption using KMS
+    - Handled by HOST/EBS
+    - AWS or customer managed CMK generates data encryption keys (DEKs)
+    - Once added, encryption cannot be removed
+    - MSSQL and Oracle support TDE (transparent data encryption)
+        - encryption handled within the DB engine instead of the host the DB is on
+        - with TDE, Oracle can use CloudHSM to encrypt the data before it leaves the instance to the EBS volume
+    - You can configure RDS to use IAM Authentication for local DB users
+        - RDS Local DB account configured to use AWS authentication token
+        - Policy attached to users or roles maps that IAM identity onto the local RDS user
+        - This is only authentication, not authorization
+            - Permissions are assigned to the local DB user, IAM is used to authenticate that user
+
+- Amazon Aurora
+    - managed database service
+    - uses a cluster, made up of a single primary instance + 0 or more replicas
+        - the replicas within aurora can be used for reads doing normal operation
+        - no local storage, uses cluster volume which provides faster provisioning and increased performance
+    - the replicas replicate from the cluster shared storage, no decrease in instance performance from replication
+    - 128TB max cluster volume
+    - storage is all SSD based, high IOPS and low latency
+    - storage is billed based on what's used
+    - replicas can be added and removed without requiring storage provisioning
+    - they use endpoint names like RDS
+        - with aurora you have a cluster endpoint name and a reader endpoint name
+    - there is no free-tier option, doesn't support micro instances inside of free tier
+    - beyond RDS singleAZ micro isntances, aurora offers better value
+    - billed for computing by an hourly charge per second, 10 minute min
+    - storage GB-month consumes, IO cost per request
+    - 100% DB size in backups are included (free backup allocation)
+    - backtrack can be used which allow in-place rewinds to a previous point in time
+        - this is enabled on a per cluster basis, and you configure how long you can backtrack for
+    - fast clones make a new databse much faster than copying all the data
+
+- Aurora Serverless
+    - removes admin overhead of managing individual database instances
+    - you don't need to provision resources like you do with Aurora
+    - uses ACU (aurora capacity units)
+    - you set minimum and maximum values and aurora serverless will scale based on load, and can go to 0 and be paused
+    - same resilience as Aurora Provisioned (6 copies across AZs)
+    - consumption billing per-second basis
+    - you only pay for the database resources that you use
+    - same cluster volume architecture that aurora provision uses
+    - you have a pool of ACU's ready to be deployed to your serverless cluster when needed
+    - when a user interacts via an application to ACU, it goes through the Proxy Fleet
+    - use cases would be:
+        - infrequently used applications
+        - new applications when you aren't sure on workload
+        - applications with variable workloads or unpredictable workloads
+        - good for development and test DB's, since it can be paused for periods with no load
+            - only build for the storage when paused
+        - good for multi-tenant applications
+            - when billing is tied to the workload
+
+- Aurora Glbal Database
+    - Replication between cluster volumes in different regions takes 1 second or less. Replication takes place at the storage level
+    - good for cross region disaster recovery and business continuity
+    - global read scaling - low latency performance improvements
+    - replication has no impact on DB performance because replication is from storage
+    - secondary regions can have 16 read replicas, which can be promoted to read/write during DR
+    - currently a max of 5 secondary regions
+
+- Aurora Multi-Master
+    - default aurora mode is single-master, only one R/W and many read replicas
+    - cluster endpoint is used to R/W, and read endpoint used for load balanced reads
+    - failover takes time, replica promoted to R/W
+    - in mutli-master mode, all instances are R/W so no downtime during failover
+    - no concept of load balanced endpoint to the client application, applications connects directly to one or more endpoints
+    - once a write is commited to one endpoint, that write is replicated to all on the cluster volume
+    - quorum is used to agree to the write commit in storage, where all storage nodes in the cluster agree to the write
+        - once quorum is agreed, the instance replicates to all other instances memory in the cluster
+
+- Database Migration Service (DMS)
+    - managed database migration service
+    - runs using a replication instance
+    - source and destination endpoints point at the source and target databases
+    - one endpoint MUST be on AWS
+    - the replication instance performs the migration between source and destination endpoints which store the connection information
+    - Jobs can be full load which is one off migration of all data
+        - or full load + CDC (change data capture) for ongoing replication which captures changes
+        - or CDC only if you want to only transfer the data changes to the destination
+    - Schema Conversion Tool (SCT) can assist with schema conversion
+        - used when converting one database engine to another
+        - can be used when engines aren't compatible
+        - not used when migration between db's of the same time, like onprem MySQL to RDS MySQL
+    - DMS is a great tool for migration DB's on prem in to AWS
+    - can be used with products like Snowball to transfer large amount of data where you wouldn't use a network for migration
+    

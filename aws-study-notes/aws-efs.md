@@ -1,0 +1,11 @@
+- EFS (Elastic File System)
+    - EFS is an implementation of NFSv4
+    - EFS filesystems can be mounted in Linux
+    - can be shared between multiple EC2 instances
+    - private service via mount targets inside a VPC
+    - can be accessed from on-prem via VPN or Direct Connect (DX)
+    - you configure EFS mount targets in a subnet on each AZ
+    - two performance modes, general purpose and Max I/O
+    - two throughput modes, bursting and provisioned
+    - standard and Infrequent Access storage classes
+    - 

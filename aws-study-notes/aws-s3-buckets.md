@@ -70,8 +70,32 @@ S3 Object Versioning
 - MFA is required to delete versions
     - MFA + code passed with api calls
 
-S3 Performance
+- S3 Select and Glacier Select
+    - Select lets you use SQL-like statements to select a part of an object, instead of retrieving an entire 5TB object
+    - Without select, filtering only occurs on the client side. If an app is sent 5TB of data, you are billed for the full 5TB regardless of what the app filters out
+    - Select filters the data before it's transferred to the app, which improves speed and lowers cost
 
+- S3 Events
+    - Allows you to create event notifications on a bucket
+    - Notification is genereated when a certain thing occurs in the bucket
+        - Such as when an object is uploaded (put, post, copy)
+        - Or when an object is deleted or DeleteMarkerCreated
+        - Object restore (Post(Initiated), Completed)
+        - Replication
+    - Can be delivered to SNS, SQS and Lambda
+        - Resource policy is needed on the resource that S3 event config is interacting with
+
+- S3 Access Logs
+    - Access Logging is enabled via console UI or via PUT Bucket logging
+    - Best effort log delivery, accesses to source bucket are usually logged in target bucket within few hours
+    - Target bucket for log delivery requires a bucket ACL that allows s3 log delivery group
+    - Log Files consist of log records
+        - records are newline-delimited
+        - attributes are space-delimited
+
+
+
+    
 
 !!EXAM!!
 - bucket names are globally unique
