@@ -1,0 +1,44 @@
+- CloudFront
+    - Content Delivery Network
+    - Origin is the source location of your content, S3 Origin or Custom Origin
+    - Distribution is the configuration unit of CloudFront
+    - Edge Location is the local cache of your data stored in edge locations
+    - Regional Edge Cache is a larger version of an edge location, provides another layer of caching
+    - 24 hour default TTL
+    - you can set a minimum TTL and maximum TTL
+    - Origin Header: Cache-Control max-age (seconds)
+    - Origin Header: Expires (Data & Time)
+    - cache invalidation invalidates any objects cached regardless of the TTL, applies to all edge locations
+    
+
+- AWS Certificate Manager (ACM)
+    - HTTPS uses SSL or TLS protocols to provide a layer of encryption oevr HTTP
+    - Data is encrypted in-transit
+    - servers can be authenticated using certificates to prove identity
+    - signed by trusted authority (Certificate Authority)
+    - ACM can create, renew, and deploy certificates
+    - Supported AWS Services only, cloudfront, API Gateway and ALB, not EC2
+    - SSL is supported by default with the cloudfront.net cname
+
+- Lambda @ Edge
+    - you can run lightweight Lambda at edge locations
+    - adjust data between the viewer and origin
+    - currently supports node.js and python
+    - run in AWS public space
+    - layers are not supported
+    - different limits vs normal lambda functions
+    - use cases: 
+        - A/B Testing, viewer request function
+        - migration between S3 origins, origin request function
+        - different objects based on device, origin request function (mobile, desktop etc)
+        - vary content by country, origin request function
+
+- AWS Global Accelerator
+    - similar to cloudfront
+    - 2x anycast IP Addresses, 1.2.3.4 and 4.3.2.1 
+        - allow a single IP to be in multiple locations, routing moves traffic to closest location
+    - this connection goes from global accelerator edge location and transits across the aws global network direct fiber link
+    - cloudfront moves the content closer to the customer with caching
+    - global accelerator moves the AWS network closer to the customer, not just the content
+    - connection enter at edge using anycast IPs and then transit over AWS backbone instead of public internet
+    - can be used for NON HTTPs connection, cloudfront is ONLY for http/s content

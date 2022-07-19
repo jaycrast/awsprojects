@@ -8,4 +8,4 @@
     - two performance modes, general purpose and Max I/O
     - two throughput modes, bursting and provisioned
     - standard and Infrequent Access storage classes
-    - 
+    
